@@ -1,96 +1,106 @@
 #include "FileStructure.h"
 
 #include <filesystem>
-#include <fstream>
 
-FileStructure::FileStructure() {
-    // Auto select C/CPP
-    this->m_languageMap = { {" ", INVALID}, {"C", CPP}, {"CPP", CPP} };
-    this->m_chosenLanguage = CPP;
+FileStructure::FileStructure(std::string srcPath) {
+    this->m_exePath = std::filesystem::current_path().string();
+    
+    for (int i = srcPath.length() - 1; i > 0; i--) {
+        // Removes the executable
+        if (srcPath[i] == '\\' || srcPath[i] == '/') {
+            srcPath = srcPath.substr(0, i);
+            break;
+        }
+    }
+    // Set path for checking templates
+    this->m_templatePath = srcPath + DEFAULT_TEMPLATE_SRC;
+
+    // Reads folders in path to determine valid languages
+    for (const auto& entry : std::filesystem::directory_iterator(this->m_templatePath)) {
+        if (entry.is_directory()) {
+            // Create entry and remove path
+            std::string folder = entry.path().string();
+            folder = folder.substr(this->m_templatePath.length());
+
+            // Remove extra slash
+            if (folder[0] == '\\' || folder [0] == '/') {
+                folder = folder.substr(1);
+            }
+
+            // Add to languages
+            this->m_languages.push_back(folder);
+        }
+    }
+
+    // Always comes with a cpp system
+    this->m_chosenLanguage = DEFAULT_LANG;
 }
 
 FileStructure::~FileStructure() {
     // Nothing todo
 }
 
-    // Allows for language to be changed
 bool FileStructure::ChangeLanguage(const std::string& lang) {
-    Language l = this->m_languageMap[lang];
-    if (l == INVALID) {
-        std::cout << "Unsupported language\n";
-        return false;
+    // Loop through all languages
+    for (const std::string& m_language : this->m_languages) {
+        // Check if language is in list
+        if (lang.compare(m_language) == 0) {
+            this->m_chosenLanguage = lang;
+            return true;
+        }
     }
-    // Valid language, can be set
-    this->m_chosenLanguage = l;
+
+    // No language folder was found
+    std::cout << "\nTemplate for language \"" << lang << "\" not found.\n";
+    return false;
+}
+
+bool FileStructure::CopyFiles() {
+    // Setup data for transfering
+    std::string src = this->m_templatePath + "/" + this->m_chosenLanguage;
+    std::string dest = this->m_exePath;
+
+    // Read all folder names in folder
+    std::vector<std::string> folders;
+    for (const auto& entry : std::filesystem::directory_iterator(src)) {
+        // Create entry and remove path
+        std::string folder = entry.path().string();
+        folder = folder.substr(src.length());
+        
+
+        // Remove extra slash
+        if (folder[0] == '\\' || folder [0] == '/') {
+            folder = folder.substr(1);
+        }
+        folders.push_back(folder);
+    }
+    
+    // Copy system, windows gcc implementation is faulty.
+    // Cannot just use copy to overwrite previous files.
+    for (const std::string& folder : folders) {
+        if (!this->CreateFolder(src, dest, folder)) {
+            std::cout << "\nFailed to create the filesystem\n";
+            return false;
+        }
+    }
+
     return true;
 }
 
-bool FileStructure::CreateFiles() {
-    // Choose language blueprint
-    switch(this->m_chosenLanguage) {
-    case CPP:
-        return this->CreateFilesCpp();
-    default:
+bool FileStructure::CreateFolder(const std::string& src, const std::string& dest, const std::string& folder) {
+    try {
+        // Add the folder into working directory
+        std::filesystem::copy_options options = std::filesystem::copy_options::recursive;
+        std::filesystem::copy(src + "/" + folder, dest + "/" + folder, options);
+    } catch (std::filesystem::filesystem_error& e) {
         return false;
     }
+    return true;
 }
 
-bool FileStructure::CreateFilesCpp() {
-    // Returns are inverted so they can be or'd onto the final response
-    // Allows for 1 variable to track all datapoints
-    bool createDirectory = !std::filesystem::create_directory("bin");
-    createDirectory |= !std::filesystem::create_directory("include");
-    createDirectory |= !std::filesystem::create_directory("lib");
-    createDirectory |= !std::filesystem::create_directory("src");
-
-    // Flip true/false
-    createDirectory = !createDirectory;
-
-    // Create sub files
-    if (createDirectory) {
-        // Create main file
-        std::filesystem::current_path("./src");
-        std::ofstream mainfile("main.cpp");
-        if (mainfile.is_open()) {
-            mainfile
-            << "#include <iostream>\n\n"
-            << "int main(int argc, char** argv) {\n"
-            << "\treturn 0;\n"
-            << "}\n";
-            
-            mainfile.close();
-        }
-
-        // Create makefile
-        std::filesystem::current_path("../bin");
-        std::ofstream makefile("Makefile");
-        if (makefile.is_open()) {
-            makefile
-            << "CXX		 = g++\n\n"
-            << "EXE		 = CHANGEME\n\n"
-            << "SRC		 = ../src\n"
-            << "INCLUDE	 = ../include\n"
-            << "LIB		 = ../lib\n\n"
-            << "FLAGS	 = -std=c++20 -I$(INCLUDE) -L$(LIB)\n"
-            << "CXXFLAGS = -c -Wall $(FLAGS)\n"
-            << "LDFLAGS	 = $(FLAGS) -o\n\n"
-            << "OBJECTS	 = main.o\n\n"
-            << "all: $(OBJECTS)\n"
-            << "\t$(CXX) $(OBJECTS) $(LDFLAGS) $(EXE)\n\n"
-            << "main.o: $(SRC)/main.cpp\n"
-            << "\t$(CXX) $(CXXFLAGS) $<\n\n"
-            << "clean:\n";
-            #ifdef _WIN32
-            makefile << "\tdel -q *.exe *.o\n";
-            #elif __linux__
-            makefile << "\t rm *.o $(EXE)";
-            #endif
-            
-            makefile.close();
-        }
+void FileStructure::List() {
+    for (const std::string& lang : this->m_languages) {
+        std::cout << lang << "\n";
     }
-
-    // Final or to account for previous flips
-    return createDirectory;
 }
 

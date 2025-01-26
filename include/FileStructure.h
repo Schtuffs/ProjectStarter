@@ -1,25 +1,26 @@
 #pragma once
 
 #include <iostream>
-#include <map>
+#include <string>
+#include <vector>
 
-enum Language { INVALID, CPP };
+#define DEFAULT_LANG            "C++"
+#define DEFAULT_TEMPLATE_SRC    std::string("/../templates")
 
 class FileStructure {
-private: 
-    Language    m_chosenLanguage;
-    std::map<std::string, Language> m_languageMap;
+private:
+    std::string m_templatePath, m_exePath, m_chosenLanguage;
+    std::vector<std::string> m_languages;
 
-    // Language based file creation
-
-    bool CreateFilesCpp();
+    bool CreateFolder(const std::string& src, const std::string& dest, const std::string& folder);
 
 public:
-    FileStructure();
+    FileStructure(std::string templatePath);
 
     // Allows for language to be changed
     bool ChangeLanguage(const std::string& lang);
-    bool CreateFiles();
+    bool CopyFiles();
+    void List();
 
     ~FileStructure();
 };

@@ -3,7 +3,7 @@
 
 #include "FileStructure.h"
 
-#define VERSION         "1.0"
+#define VERSION         "2.0"
 #define CODE_EXIT       0
 #define CODE_INVALID    -1
 
@@ -32,8 +32,8 @@ void Help() {
     std::cout << "\n  Commands\n";
     std::cout << "-h        Prints this menu\n";
     std::cout << "-v        Prints the program version\n";
-    std::cout << "-l        Lists valid languages. Languages are all capitalized\n";
-    std::cout << "          Have language in argument after to select it instead.\n";
+    std::cout << "-l        Lists valid languages. Have language\n";
+    std::cout << "          in argument after to select it instead.\n";
     std::cout << "-r        Allows running with default params\n";
     std::cout << std::endl;
 }
@@ -43,17 +43,16 @@ void Version() {
     std::cout << "\nVersion " << VERSION << "\n";
     std::cout << "Created to create my filesystems quicker\n";
     std::cout << "Changes can be made for the filesystem based on preferences\n";
-    std::cout << std::endl;
 }
 
 // Prints valid languages
-void Languages() {
-    std::cout << "\n  Languages\n";
-    std::cout << "C/CPP\n";
-    std::cout << std::endl;
+void Languages(FileStructure& fs) {
+    std::cout << "\n    Languages\n";
+    fs.List();
 }
 
 // Perform the command line arguments
+// Returns true if files should be created
 bool Commands(FileStructure& fs, std::vector<std::string>& args) {
     // Each check
     int index = CODE_INVALID;
@@ -76,13 +75,13 @@ bool Commands(FileStructure& fs, std::vector<std::string>& args) {
             if (fs.ChangeLanguage(args[index + 1])) {
                 std::cout << "Language set to " << args[index + 1] << "\n";
                 run = true;
-            } 
+            }
             else {
-                std::cout << "Language could not be set to " << args[index + 1] << ". Perhaps try all CAPS\n";
+                std::cout << "Maybe check spelling of folder\n";
             }
         }
         else {
-            Languages();
+            Languages(fs);
         }
     }
 
@@ -100,19 +99,18 @@ int main(int argc, char** argv) {
     auto args = Parse(argc, argv);
 
     // Parsing commands
-    FileStructure fs;
+    FileStructure fs(argv[0]);
     if (!Commands(fs, args)) {
         return 0;
     }
 
     // Create folders
-    std::cout << "Creating folders\n";
-    if (fs.CreateFiles()) {
+    std::cout << "\nCreating folders\n";
+    if (fs.CopyFiles()) {
         std::cout << "Successfully created folders\n";
     }
-    else {
-        std::cout << "Failed to create folders\n";
-    }
+
+    std::cout << std::endl;
     
     return 0;
 }
