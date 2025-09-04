@@ -3,7 +3,7 @@
 
 #include "FileStructure.h"
 
-#define VERSION         "2.0"
+#define VERSION         "2.1"
 #define CODE_EXIT       0
 #define CODE_INVALID    -1
 

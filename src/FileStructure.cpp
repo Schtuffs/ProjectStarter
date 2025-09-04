@@ -51,7 +51,7 @@ bool FileStructure::ChangeLanguage(const std::string& lang) {
     }
 
     // No language folder was found
-    std::cout << "\nTemplate for language \"" << lang << "\" not found.\n";
+    std::cout << "\nTemplate \"" << lang << "\" not found.\n";
     return false;
 }
 
