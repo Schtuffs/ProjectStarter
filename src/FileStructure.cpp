@@ -1,6 +1,7 @@
 #include "FileStructure.h"
 
 #include <filesystem>
+#include <iostream>
 
 FileStructure::FileStructure(std::string srcPath) {
     this->m_exePath = std::filesystem::current_path().string();
@@ -72,6 +73,13 @@ bool FileStructure::CopyFiles() {
         if (folder[0] == '\\' || folder [0] == '/') {
             folder = folder.substr(1);
         }
+
+        // Ignore build or winbuild for cmake
+        if (std::string("build").compare(folder) == 0 || 
+                std::string("winbuild").compare(folder) == 0) {
+            continue;
+        }
+        
         folders.push_back(folder);
     }
     

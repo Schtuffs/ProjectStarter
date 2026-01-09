@@ -1,18 +1,17 @@
 #pragma once
 
-#include "Socket.h"
+#include <sockets/Socket.h>
 
 class ClientSocket : public Socket {
 public:
     // ----- Creation ----- Destruction -----
 
-    ClientSocket(CONNECTION_TYPE cType, const std::string& ip, uint16_t port);
+    ClientSocket(CONNECTION_TYPE cType, const std::string& ip = DEFAULT_IP, uint16_t port = DEFAULT_PORT);
     ~ClientSocket();
 
     // ----- Read -----
 
     const std::string& ip();
-    bool isConnected();
     
     // ----- Update -----
 
@@ -21,6 +20,5 @@ public:
 private:
     std::string mIp;
     sockaddr_in mSvrAddr;
-    bool mIsConnected;
 };
 

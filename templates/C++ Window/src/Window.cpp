@@ -1,4 +1,4 @@
-#include "Window.h"
+#include "window/Window.h"
 
 
 // Holds values for opening/closing OpenGL
@@ -28,7 +28,7 @@ void Window::init() {
 }
 
 // Closes OpenGL
-void Window::close() {
+void Window::terminate() {
     glfwTerminate();
 }
 
@@ -83,7 +83,7 @@ Window::~Window() {
 
     // If no windows left, close OpenGL and marks as uninitialized
     if (s_totalWindows == 0) {
-        Window::close();
+        Window::terminate();
         s_initialized = false;
     }
 }
@@ -92,7 +92,7 @@ Window::~Window() {
 
 // ----- Setters -----
 
-void Window::setBackground(Colour col) {
+Window& Window::setBackground(const Colour& col) {
     float r = col.getR() * (1. / COLOUR_MAX);
     float g = col.getG() * (1. / COLOUR_MAX);
     float b = col.getB() * (1. / COLOUR_MAX); 
@@ -101,53 +101,62 @@ void Window::setBackground(Colour col) {
         glfwMakeContextCurrent(this->m_window);
     }
     glClearColor(r, g, b, a);
+    return *this;
 }
 
-void Window::setRefreshRate(int newRate) {
+Window& Window::setRefreshRate(int newRate) {
     // Not below 0
     if (0 < newRate) {
-        return;
+        return *this;
     }
 
     // Exactly 0, no frame delay
     if (newRate == 0) {
         this->m_frameTime = 0;
-        return;
+        return *this;
     }
 
     this->m_frameTime = CLOCKS_PER_SEC / newRate;
+    return *this;
 }
 
-void Window::add(Renderable& obj) {
+Window& Window::add(Renderable& obj) {
     this->m_renderObjects.push_back(&obj);
+    return *this;
 }
 
 
 
 // ----- Callbacks -----
 
-void Window::setCallback(GLFWkeyfun callback) {
+Window& Window::setCallback(GLFWkeyfun callback) {
     glfwSetKeyCallback(this->m_window, callback);
+    return *this;
 }
 
-void Window::setCallback(GLFWcursorposfun callback) {
+Window& Window::setCallback(GLFWcursorposfun callback) {
     glfwSetCursorPosCallback(this->m_window, callback);
+    return *this;
 }
 
-void Window::setCallback(GLFWmousebuttonfun callback) {
+Window& Window::setCallback(GLFWmousebuttonfun callback) {
     glfwSetMouseButtonCallback(this->m_window, callback);
+    return *this;
 }
 
-void Window::setCallback(GLFWcharfun callback) {
+Window& Window::setCallback(GLFWcharfun callback) {
     glfwSetCharCallback(this->m_window, callback);
+    return *this;
 }
 
-void Window::setCallback(GLFWframebuffersizefun callback) {
+Window& Window::setCallback(GLFWframebuffersizefun callback) {
     glfwSetFramebufferSizeCallback(this->m_window, callback);
+    return *this;
 }
 
-void Window::setCallback(GLFWwindowrefreshfun callback) {
+Window& Window::setCallback(GLFWwindowrefreshfun callback) {
     glfwSetWindowRefreshCallback(this->m_window, callback);
+    return *this;
 }
 
 
@@ -155,6 +164,10 @@ void Window::setCallback(GLFWwindowrefreshfun callback) {
 // ----- Read -----
 
 bool Window::shouldClose() {
+    if (!this->m_created) {
+        return false;
+    }
+
     return glfwWindowShouldClose(this->m_window);
 }
 

@@ -5,8 +5,8 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include "Colour.h"
-#include "Renderable.h"
+#include "window/Colour.h"
+#include "window/Renderable.h"
 
 /*
 Allows for easy creation of windows.
@@ -31,7 +31,7 @@ private:
     // Initializes glfw
     void init();
     // Closes OpenGL
-    void close();
+    void terminate();
 
     // For rendering frames at defined frame rate
     bool hasFrameTimePassed();
@@ -49,29 +49,29 @@ public:
     // ----- Setters -----
 
     // Set background to specified colour
-    void setBackground(Colour col);
+    Window& setBackground(const Colour& col);
 
     // Sets window to desired refreshrate
     // Setting to 0 removes refresh cap
-    void setRefreshRate(int newRate);
+    Window& setRefreshRate(int newRate);
 
     // Chooses callback overload based on passed param
 
     // Sets the key callback for the window
-    void setCallback(GLFWkeyfun callback);
+    Window& setCallback(GLFWkeyfun callback);
     // Sets the cursor position callback for the window
-    void setCallback(GLFWcursorposfun callback);
+    Window& setCallback(GLFWcursorposfun callback);
     // Sets the mouse button callback for the window
-    void setCallback(GLFWmousebuttonfun callback);
+    Window& setCallback(GLFWmousebuttonfun callback);
     // Sets the character pressed callback for the window
-    void setCallback(GLFWcharfun callback);
+    Window& setCallback(GLFWcharfun callback);
     // Sets the window resize callback for the window
-    void setCallback(GLFWframebuffersizefun callback);
+    Window& setCallback(GLFWframebuffersizefun callback);
     // Sets the window refresh callback for the window
-    void setCallback(GLFWwindowrefreshfun callback);
+    Window& setCallback(GLFWwindowrefreshfun callback);
 
     // Add a new drawable into the screen
-    void add(Renderable& obj);
+    Window& add(Renderable& obj);
 
     // ----- OpenGL ----- Functions -----
 

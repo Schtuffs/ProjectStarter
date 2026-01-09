@@ -1,5 +1,5 @@
 #pragma once
 
-#include "ServerSocket.h"
-#include "ClientSocket.h"
-#include "Packet.h"
+#include <sockets/ServerSocket.h>
+#include <sockets/ClientSocket.h>
+#include <sockets/Packet.h>

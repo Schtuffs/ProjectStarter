@@ -1,4 +1,4 @@
-#include "Colour.h"
+#include "window/Colour.h"
 
 // ----- Creation / Destruction -----
 
@@ -30,10 +30,6 @@ Colour::Colour(int r, int g, int b, int a) {
     this->m_g = g;
     this->m_b = b;
     this->m_a = a;
-}
-
-Colour::~Colour() {
-    // Nothing todo
 }
 
 
@@ -79,19 +75,19 @@ bool Colour::setA(int a) {
 
 // ----- Getters -----
 
-int Colour::getR() {
+int Colour::getR() const noexcept {
     return this->m_r;
 }
 
-int Colour::getG() {
+int Colour::getG() const noexcept {
     return this->m_g;
 }
 
-int Colour::getB() {
+int Colour::getB() const noexcept {
     return this->m_b;
 }
 
-int Colour::getA() {
+int Colour::getA() const noexcept {
     return this->m_a;
 }
 

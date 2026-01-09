@@ -3,7 +3,7 @@
 
 #include "FileStructure.h"
 
-#define VERSION         "2.1"
+#define VERSION         "2.2"
 #define CODE_EXIT       0
 #define CODE_INVALID    -1
 
@@ -90,6 +90,7 @@ bool Commands(FileStructure& fs, std::vector<std::string>& args) {
         run = true;
     }
 
+    std::cout << "\n";
     return run;
 }
 
