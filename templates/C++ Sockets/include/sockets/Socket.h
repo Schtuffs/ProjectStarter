@@ -21,7 +21,7 @@
 #include "Packet.h"
 
 enum class CONNECTION_TYPE  { TCP, UDP };
-constexpr std::string SOCKETS_VERSION   = "2.0.0";
+constexpr std::string SOCKETS_VERSION   = "2.1.1";
 constexpr std::string DEFAULT_IP        = "127.0.0.1";
 constexpr uint16_t DEFAULT_PORT         = 34567;
 
