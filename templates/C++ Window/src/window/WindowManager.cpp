@@ -1,10 +1,10 @@
-#include "WindowManager.h"
+#include "window/WindowManager.h"
 
 #include <mutex>
 #include <print>
 
-#include "RenderManager.h"
-#include "Window.h"
+#include "window/RenderManager.h"
+#include "window/Window.h"
 
 static int s_winNum = 0;
 static std::mutex s_winMtx;

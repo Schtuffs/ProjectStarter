@@ -35,6 +35,6 @@ public:
 
 protected:
     GLuint m_vao, m_vbo, m_ebo, m_shader;
-    std::function<void(void)> m_lambda;
+    std::function<void(void)> m_renderLambda;
 };
 

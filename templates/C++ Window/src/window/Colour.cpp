@@ -1,4 +1,4 @@
-#include "Colour.h"
+#include "window/Colour.h"
 
 // ----- Creation / Destruction -----
 

@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.25)
 project(Window C CXX)
 
 set(CMAKE_CXX_STANDARD 23)
-set(WINDOW_INC ${CMAKE_CURRENT_LIST_DIR}/include/window)
 set(WINDOW_SRC ${CMAKE_CURRENT_LIST_DIR}/src/window)
 set(SRC ${CMAKE_CURRENT_LIST_DIR}/src)
 set(INCLUDE ${CMAKE_CURRENT_LIST_DIR}/include)
@@ -20,7 +19,7 @@ add_executable(${PROJECT_NAME}
     ${SRC}/main.cpp
 )
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${WINDOW_INC} ${INCLUDE})
+target_include_directories(${PROJECT_NAME} PRIVATE ${INCLUDE})
 
 # OpenGL required
 find_package(OpenGL REQUIRED)

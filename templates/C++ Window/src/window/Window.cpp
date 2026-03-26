@@ -1,10 +1,10 @@
-#include "Window.h"
+#include "window/Window.h"
 
 #include <chrono>
 #include <print>
 #include <thread>
 
-#include "WindowManager.h"
+#include "window/WindowManager.h"
 
 #define GET_CURRENT_TIME() std::chrono::nanoseconds(std::chrono::system_clock::now().time_since_epoch()).count()
 

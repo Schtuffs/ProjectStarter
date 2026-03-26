@@ -1,14 +1,9 @@
-#include "Renderable.h"
+#include "window/Renderable.h"
 
-#include <fstream>
-#include <print>
+#include "window/RenderManager.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include "RenderManager.h"
-
-Renderable::Renderable(const std::function<void(void)>& lambda) : m_lambda(lambda) {
+Renderable::Renderable(const std::function<void(void)>& lambda) : m_renderLambda(lambda) {
+    RenderManager::init();
     m_vao = RenderManager::createVAO();
     m_vbo = RenderManager::createVBO();
     m_ebo = RenderManager::createEBO();
@@ -18,9 +13,10 @@ Renderable::~Renderable() {
     RenderManager::destroyVAO(m_vao);
     RenderManager::destroyVBO(m_vbo);
     RenderManager::destroyEBO(m_ebo);
+    RenderManager::terminate();
 }
 
 void Renderable::render() {
-    m_lambda();
+    m_renderLambda();
 }
 

@@ -8,8 +8,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "Colour.h"
-#include "Renderable.h"
+#include "window/Colour.h"
+#include "window/Renderable.h"
 
 /**
  * @class Window

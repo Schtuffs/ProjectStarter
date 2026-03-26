@@ -1,4 +1,4 @@
-#include "Library.h"
+#include "window/Library.h"
 
 double Library::map(double value, double currentMin, double currentMax, double newMin, double newMax) {
     value -= currentMin;
