@@ -5,146 +5,213 @@
 
 // ----- Creation ----- Destruction -----
 
-Packet::Packet() {
-    mHead.size = ERROR_SIZE;
+Packet::Packet(uint64_t size) : m_buffer(nullptr), m_writePointer(0), m_readPointer(0), m_size(size) {
+    if (m_size < 1 && m_size != PACKET_INVALID) {
+        m_size = 1;
+    }
+
+    if (m_size != PACKET_INVALID) {
+        m_buffer = new BUFFER[m_size];
+    }
 }
 
-Packet::Packet(const Packet& other) {
-    // Copy head
-    ::memcpy(&this->mHead, &other.mHead, sizeof(mHead));
-
-    // Copy sections
-    mSections = other.mSections;
+Packet::Packet(const Packet::BUFFER* buf, uint64_t size) : m_buffer(nullptr), m_writePointer(0), m_readPointer(0), m_size(size) {
+    if (!buf) {
+        throw std::string("PACKET ERROR: buffer was null");
+    }
+    if (m_size < 1 && m_size != PACKET_INVALID) {
+        m_size = 1;
+    }
     
-    // Copy main buffer
-    mBuffer = other.mBuffer;
+    if (m_size != PACKET_INVALID) {
+        m_buffer = new BUFFER[m_size];
+        std::memcpy(m_buffer, buf, m_size);
+        m_writePointer = m_size;
+    }
 }
 
-Packet::Head::Head(uint16_t v, uint64_t f) : version(v), flags(f) {
-    // Nothing todo
+Packet::Packet(const Packet& other) : m_buffer(nullptr), m_writePointer(other.m_writePointer), m_readPointer(0), m_size(other.m_size) {
+    if (m_size != PACKET_INVALID) {
+        m_buffer = new BUFFER[m_size];
+        std::memcpy(m_buffer, other.m_buffer, m_writePointer);
+    }
 }
 
 Packet::~Packet() {
-    // Nothing todo
+    delete[] m_buffer;
 }
 
 
 
 // ----- Read -----
 
-// ----- Head -----
-
-uint64_t Packet::flags() const {
-    return mHead.flags;
-}
-    
-uint16_t Packet::version() const {
-    return mHead.version;
+Packet::BUFFER* Packet::data() const noexcept {
+    return m_buffer;
 }
 
-bool Packet::hasFlag(uint64_t flag) const {
-    return mHead.flags & flag;
+uint64_t Packet::size() const noexcept {
+    return m_writePointer;
 }
 
-uint64_t Packet::size() const {
-    return mHead.size;
-}
-
-// ----- Section -----
-
-uint64_t Packet::section() const {
-    return mSections.size();
-}
-
-Array<char>& Packet::section(uint64_t index) const {
-    return mSections.at(index);
-}
-
-// ----- Other -----
-
-Array<char> Packet::data() const {
-    return mBuffer;
-}
-
-bool Packet::isValid() const {
-    return (mHead.size != Packet::ERROR_SIZE);
-}
-
-int Packet::packetSize() const {
-    return mHead.size + sizeof(mHead);
+bool Packet::isValid() const noexcept {
+    return m_size != PACKET_INVALID;
 }
 
 
 
 // ----- Update -----
 
-void Packet::package(const Array<char>& buf) {
-    // Copy head
-    std::memcpy(&mHead, buf.data(), sizeof(Head));
-    mBuffer = buf;
-    mBufferPointer = sizeof(mHead);
+bool Packet::reallocate() {
+    if (m_buffer == nullptr) {
+        std::println(stderr, "PACKET ERROR: cannot reallocate on invalid packet");
+        return false;
+    }
+    
+    // Prepare new allocation space
+    uint64_t newSize = std::ceil(this->size() * 1.5);
+    BUFFER* newBuf = new BUFFER[newSize];
+    if (!newBuf) {
+        std::println(stderr, "PACKET ERROR: failed to allocate a larger buffer");
+        return false;
+    }
 
-    // Copy each section
-    mSections = Array<Array<char>>(mHead.sections);
-    for (int i = 0; i < mHead.sections; i++) {
-        // First param is section size
-        uint64_t size = 0;
-        std::memcpy(&size, buf.data() + mBufferPointer, sizeof(buf.size()));
-        mBufferPointer += sizeof(size);
-        if (size == 0) {
-            continue;
+    // Copy the data and change pointers
+    std::memcpy(newBuf, m_buffer, m_writePointer);
+    delete[] m_buffer;
+    m_buffer = newBuf;
+    return true;
+}
+
+
+
+// ----- INSERTIONS -----
+
+Packet& Packet::push(const void* data, uint64_t size) {
+    if (m_buffer == nullptr) {
+        std::println(stderr, "PACKET ERROR: cannot reallocate on invalid packet");
+        return *this;
+    }
+    
+    while (m_writePointer + size > m_size) {
+        if (!reallocate()) {
+            return *this;
         }
-        
-        // Create section array
-        mSections[i] = Array<char>(size);
-        std::memcpy(mSections[i].data(), buf.data() + mBufferPointer, mSections[i].size());
-        mBufferPointer += mSections[i].size();
     }
+
+    // Add new data and update pointer
+    std::memcpy(m_buffer + m_writePointer, data, size);
+    m_writePointer += size;
+    return *this;
 }
 
-void Packet::package(const Head& head) {
-    // Save the head data
-    std::memcpy(&mHead, &head, sizeof(mHead));
-    mHead.sections = 0;
-    mHead.size = 0;
-    
-    // Prepare buffer
-    mBuffer = Array<char>(sizeof(mHead) + mHead.size);
-    
-    // Copy head into buffer
-    std::memcpy(mBuffer.data(), &mHead, sizeof(mHead));
-    mBufferPointer = sizeof(mHead);
+Packet& Packet::operator<<(int8_t val) {
+    return push(&val, sizeof(val));
 }
 
-void Packet::package(const Head& head, const Array<Array<char>>& sections) {
-    // Save the head data
-    std::memcpy(&mHead, &head, sizeof(mHead));
-    mHead.sections = sections.size();
-    
-    // Add size of sections
-    mHead.size = 0;
-    for (int i = 0; i < sections.size(); i++) {
-        mHead.size += sizeof(sections.size());
-        mHead.size += sections[i].size();
+Packet& Packet::operator<<(uint8_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(int16_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(uint16_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(int32_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(uint32_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(int64_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(uint64_t val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(float val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(double val) {
+    return push(&val, sizeof(val));
+}
+
+Packet& Packet::operator<<(const std::string& val) {
+    return push(val.c_str(), val.length() + 1);
+}
+
+
+
+// ----- REMOVALS -----
+
+Packet& Packet::pop(void* data, uint64_t size) {
+    if (!data) {
+        std::println(stderr, "ERROR: Packet could not pop to null");
+        return *this;
     }
-    
-    // Prepare buffer
-    mBuffer = Array<char>(sizeof(mHead) + mHead.size);
-    
-    // Copy head into buffer
-    std::memcpy(mBuffer.data(), &mHead, sizeof(mHead));
-    mBufferPointer = sizeof(mHead);
-    
-    // Copy sections
-    for (int i = 0; i < sections.size(); i++) {
-        // Copy size param
-        auto size = sections[i].size();
-        std::memcpy(mBuffer.data() + mBufferPointer, &size, sizeof(sections[i].size()));
-        mBufferPointer += sizeof(sections[i].size());
-        
-        // Copy array
-        std::memcpy(mBuffer.data() + mBufferPointer, sections[i].data(), sections[i].size());
-        mBufferPointer += sections[i].size();
-    }
+
+    std::memcpy(data, m_buffer + m_readPointer, size);
+    m_readPointer += size;
+    return *this;
+}
+
+Packet& Packet::operator>>(int8_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(uint8_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(int16_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(uint16_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(int32_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(uint32_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(int64_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(uint64_t& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(float& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(double& val) {
+    return pop(&val, sizeof(val));
+}
+
+Packet& Packet::operator>>(std::string& val) {
+    val = "";
+    int8_t c;
+
+    do {
+        pop(&c, sizeof(c));
+        val += c;
+    } while (c != '\0');
+
+    return *this;
 }
 

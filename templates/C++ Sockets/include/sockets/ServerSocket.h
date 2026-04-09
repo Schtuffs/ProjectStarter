@@ -3,66 +3,127 @@
 #include <functional>
 #include <thread>
 
+#ifdef _SERVER_SOCKET_IMPL
+#include <boost/asio/thread_pool.hpp>
+#endif
+
+#include <sockets/CLIENT.h>
+#include <sockets/Packet.h>
 #include <sockets/Socket.h>
 
+/**
+ * @class ServerSocket
+ * @brief Creates a simple server socket, TCP or UDP.
+ * @author Kyle Wagler
+ * @date 2026-03-20
+ */
 class ServerSocket : public Socket {
-public:
+    public:
     // ----- Creation ----- Destruction -----
-
+    
+    /**
+     * @brief Creates a specified server.
+     * @param cType The `CONNECTION_TYPE` to use.
+     * @param port The port to bind to.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
     ServerSocket(CONNECTION_TYPE cType, uint16_t port = DEFAULT_PORT);
+    /**
+     * @brief Free object memory usage.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
     ~ServerSocket();
-
+    
     // ----- Read -----
     
-    // UDP - Receive packets
-    // TCP - Accepts new clients
-    bool check(int millis = 0, int maxSize = MAX_BUF_SIZE);
-
-    // Checks if servers are still running
+    /**
+     * @brief Check if the server is still running
+     * @return `true` if running
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
     bool isRunning();
+    
+    /**
+     * @brief Send data from server back to client.
+     * @param client The `CLIENT` to send to.
+     * @param packet The `Packet` to send.
+     * @return `true` on successful send, `false` on failure to send.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    bool send(CLIENT& client, const Packet& packet) const noexcept;
     
     // ----- Update -----
     
-    // Add the receiving lambda for clients
-    void addReceive(std::function<void(const Packet&)> function);
-
-    // Sets the server to be multithreaded and run off the main thread
-    // Only works for TCP
-    void detach();
-
-    // Receives a packet from the socket
-    // Returns 1 if packet received
-    // Returns 0 if failure to poll
-    // Returns -1 if errors from packet
-    int receive(int millis, int maxSize = MAX_BUF_SIZE);
-
-    // Stop the server
+    /**
+     * @brief Add a lambda for handling packets.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    void addReceive(std::function<void(CLIENT, Packet)> function);
+    
+    /**
+     * @brief Runs the server off the main thread and multithreads clients.
+     * @param threads The number of threads to run the server with. 0 - auto detect system threads.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    void detach(uint64_t threads = 0);
+    
+    /**
+     * @brief Stops the server.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
     void stop();
     
 private:
     // Pointer to a function that the client will call on packet receive
-    std::function<void(const Packet&)> mPacketLambda;
-    sockaddr_in mSvrAddr;
-    std::thread mAcceptThread;
-    SOCKET mTempClient;
-    bool mIsThreaded;
-    
-    // ----- Read -----
-    
-    // Time in millis to poll for clients
-    // Creates new thread for each connected client
-    bool _accept(int millis = 0, int maxSize = MAX_BUF_SIZE);
-    
-    // Each thread is sent here, waits to receive packets
-    void _clientThread(SOCKET client);
+    sockaddr_in m_svrAddr;
 
-    // Receives a packet from the socket
-    // Returns 1 if packet received
-    // Returns 0 if failure to poll
-    // Returns -1 if errors from packet
-    int _receive(SOCKET socket, int millis = 0, int maxSize = MAX_BUF_SIZE);
-
-    // Main loop for threaded server
-    void _serverThread();
+    bool m_isRunning;
+    std::thread m_serverThread;
+    std::function<void(CLIENT, Packet)> m_packetLambda;
+#ifdef _SERVER_SOCKET_IMPL
+    boost::asio::thread_pool* m_packetPool;
+#endif
+    
+    /**
+     * @brief Have the server check for network updates.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    bool check(int millis = 0, int maxSize = MAX_BUF_SIZE);
+    
+    /**
+     * @brief Accepts a new client on TCP.
+     * @return `true` on new client.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    bool accept(int millis = 0);
+    /**
+     * @brief Receives a packet and performs packet lambda.
+     * @return 1 - success. 0 - poll timeout. -1 - error.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    int receive(SOCKET socket, int millis = 0, int maxSize = MAX_BUF_SIZE);
+    
+    /**
+     * @brief The main server loop.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    void serverLoop();
+    /**
+     * @brief The TCP client loop.
+     * @author Kyle Wagler
+     * @date 2026-03-20
+     */
+    void clientLoop(SOCKET client);
 };
 
